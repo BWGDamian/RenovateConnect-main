@@ -1,0 +1,73 @@
+name: Discord — build notification
+
+# Posts the CI result to the #builds Discord channel after the CI workflow
+# finishes (pass/fail), once per push.
+# Setup (one-time): create a Discord webhook for #builds and add its URL as the
+# repo Actions secret DISCORD_WEBHOOK_URL. Until then this safely no-ops.
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+jobs:
+  notify:
+    name: Notify Discord
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post CI result to Discord
+        # Everything via env (never interpolate ${{ }} into the script) so commit
+        # text can't inject shell; jq --arg JSON-escapes values safely.
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          REPO: ${{ github.repository }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          ACTOR: ${{ github.event.workflow_run.actor.login }}
+          COMMIT_MSG: ${{ github.event.workflow_run.head_commit.message }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "DISCORD_WEBHOOK_URL not set — skipping Discord notification."
+            exit 0
+          fi
+
+          case "$CONCLUSION" in
+            success)   emoji="✅"; color=3066993; word="passed" ;;
+            failure)   emoji="❌"; color=15158332; word="failed" ;;
+            timed_out) emoji="❌"; color=15158332; word="timed out" ;;
+            cancelled) emoji="⚪"; color=9807270;  word="was cancelled" ;;
+            *)         emoji="⚠️"; color=15844367; word="$CONCLUSION" ;;
+          esac
+
+          short_sha="${SHA:0:7}"
+          title_line="$(printf '%s' "$COMMIT_MSG" | head -n1)"
+          title_text="$emoji CI $word — $BRANCH"
+
+          payload=$(jq -n \
+            --arg title "$title_text" \
+            --arg desc "$title_line" \
+            --arg url "$RUN_URL" \
+            --arg repo "$REPO" \
+            --arg actor "$ACTOR" \
+            --arg sha "$short_sha" \
+            --argjson color "$color" \
+            '{
+              username: "RenovateConnect Builds",
+              embeds: [{
+                title: $title,
+                description: $desc,
+                url: $url,
+                color: $color,
+                fields: [
+                  { name: "Repo", value: $repo, inline: true },
+                  { name: "Author", value: $actor, inline: true },
+                  { name: "Commit", value: $sha, inline: true }
+                ]
+              }]
+            }')
+
+          curl -sf -H "Content-Type: application/json" -X POST -d "$payload" "$DISCORD_WEBHOOK_URL" \
+            && echo "Posted to Discord." \
+            || { echo "Discord post failed."; exit 1; }

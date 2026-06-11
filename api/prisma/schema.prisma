@@ -1,0 +1,735 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CLIENT
+  BUSINESS
+  ADMIN
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  CONVERTED
+  CLOSED
+}
+
+enum AppointmentStatus {
+  REQUESTED
+  CONFIRMED
+  DECLINED
+  CANCELLED
+}
+
+enum ActivityType {
+  LEAD
+  MESSAGE
+  APPOINTMENT
+  REVIEW
+  SAVED_SEARCH
+  PAYMENT
+}
+
+enum QuoteStatus {
+  PENDING    // submitted, awaiting the contractor
+  QUOTED     // the contractor sent a price
+  DECLINED   // the contractor passed
+  ACCEPTED   // the homeowner accepted the quote
+  WITHDRAWN  // the homeowner pulled the request
+}
+
+// Admin approval workflow for new business listings and portfolio projects.
+// Created items start PENDING (hidden from public search) until an admin
+// approves them. REJECTED items stay private and carry a reason so the owner
+// can fix and resubmit. Existing rows are backfilled to APPROVED on migrate
+// so live data isn't suddenly hidden.
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// In-app deposit payments (Stripe Connect). A homeowner pays a deposit when they
+// accept a quote; the money is routed to the contractor's connected account and
+// the platform takes a commission as a fee on top. One Payment row per deposit
+// is our durable record — it both confirms the job happened and tracks the fee.
+enum PaymentStatus {
+  PENDING    // PaymentIntent created, not yet confirmed by the homeowner
+  SUCCEEDED  // funds captured + routed; commission collected
+  FAILED     // the charge failed (card declined, etc.)
+  REFUNDED   // the deposit was refunded (dispute/cancellation)
+}
+
+// A Project is the first-class version of the derived hub: one persistent
+// container per accepted job, holding the staged milestone payments. (The
+// read-only /projects aggregation still works for engagements without one.)
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+// Milestone escrow lifecycle. Funds are held on the platform when the homeowner
+// funds a milestone, and only transferred to the contractor on release
+// (homeowner approval, or auto-release after the grace window once work is
+// submitted). A funded-but-unreleased milestone can be refunded in full.
+enum MilestoneStatus {
+  PENDING    // created by the contractor, not yet funded
+  FUNDED     // homeowner paid; funds held on the platform balance
+  SUBMITTED  // contractor marked the work done and attached proof
+  DISPUTED   // homeowner raised a dispute — auto-release is paused, admin reviews
+  APPROVED   // released — funds transferred to the contractor
+  REFUNDED   // funded then refunded back to the homeowner
+}
+
+// A homeowner-raised dispute on a milestone. While OPEN, the milestone sits in
+// DISPUTED status: the auto-release sweep skips it and neither side can manually
+// approve/refund without an admin. Resolution writes the chosen action and
+// flips the milestone (RELEASE → APPROVED + transfer; REFUND → REFUNDED via the
+// existing milestone refund path). WITHDRAWN restores the milestone's prior
+// status so normal flow resumes.
+enum DisputeStatus {
+  OPEN
+  RESOLVED_RELEASE
+  RESOLVED_REFUND
+  WITHDRAWN
+}
+
+enum DisputeReason {
+  WORK_NOT_DONE
+  WORK_INCOMPLETE
+  WORK_LOW_QUALITY
+  NOT_AS_AGREED
+  DAMAGE
+  WRONG_AMOUNT
+  OTHER
+}
+
+// Contractor identity-verification documents (license, insurance, optional ID).
+// Each upload is reviewed by an admin. `Business.verified` is derived: a
+// business is verified when it has at least one APPROVED + unexpired LICENSE
+// and at least one APPROVED + unexpired INSURANCE doc on file.
+enum VerificationDocType {
+  LICENSE
+  INSURANCE
+  IDENTITY
+}
+
+enum VerificationDocStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  role         Role      @default(CLIENT)
+  name         String
+  phone        String?
+  avatarUrl    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Notifications: master push switch plus per-type opt-outs (gate both push
+  // delivery and the in-app activity feed).
+  pushEnabled        Boolean @default(true)
+  notifyLeads        Boolean @default(true)
+  notifyMessages     Boolean @default(true)
+  notifyAppointments Boolean @default(true)
+  notifyReviews      Boolean @default(true)
+
+  // Watermark for the "what's new with your saved contractors" digest. New
+  // portfolio projects and reviews on a favorited business are surfaced when
+  // they're created after the later of this timestamp and when the homeowner
+  // saved that business. Advanced when the homeowner views the digest.
+  favoritesDigestSeenAt DateTime?
+
+  business     Business?
+  sentMessages     Message[]   @relation("SentMessages")
+  conversations    Conversation[] @relation("ClientConversations")
+  estimations      Estimation[]
+  deviceTokens     DeviceToken[]
+  favorites        Favorite[]
+  appointments     Appointment[]  @relation("ClientAppointments")
+  activities       Activity[]
+  reviews          Review[]
+  savedSearches    SavedSearch[]
+  quoteRequests    QuoteRequest[] @relation("ClientQuoteRequests")
+  payments         Payment[]      @relation("ClientPayments")
+  projects         Project[]      @relation("ClientProjects")
+  reportsFiled     Report[]       @relation("ReportsFiled")
+  reportsResolved  Report[]       @relation("ReportsResolved")
+  blocking         Block[]        @relation("Blocker")
+  blockedBy        Block[]        @relation("Blocked")
+}
+
+// User-generated-content moderation — App Store guideline 1.2 requires a way
+// for users to report objectionable content and other users. We keep the
+// target polymorphic (a userId, messageId, reviewId, etc.) and let admins
+// review the queue. RESOLVED = action taken (warn/hide/ban); DISMISSED = no
+// action. The reporter is kept set-null on user delete so the audit trail
+// survives an account deletion.
+enum ReportTargetType {
+  USER
+  MESSAGE
+  REVIEW
+  PORTFOLIO
+  FEED
+  BUSINESS
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  HATE
+  SEXUAL
+  VIOLENCE
+  SCAM
+  IMPERSONATION
+  OFF_PLATFORM
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
+model Report {
+  id           String           @id @default(cuid())
+  reporterId   String?
+  targetType   ReportTargetType
+  targetId     String
+  reason       ReportReason
+  details      String?
+  status       ReportStatus     @default(PENDING)
+  resolvedById String?
+  resolvedAt   DateTime?
+  resolution   String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  reporter   User? @relation("ReportsFiled",    fields: [reporterId],   references: [id], onDelete: SetNull)
+  resolvedBy User? @relation("ReportsResolved", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+  @@index([reporterId])
+}
+
+// One-way "I don't want to see this person again". Symmetric enforcement —
+// when A blocks B, neither side can open a new conversation or send messages
+// to the other, and B's reviews/portfolio/feed entries are hidden from A.
+// Unique on (blockerId, blockedId); deleting either user removes the row.
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+}
+
+model DeviceToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  platform  String   @default("ios")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Business {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  companyName     String
+  description     String
+  logoUrl         String?
+  website         String?
+  licenseNumber   String?
+  yearsInBusiness Int       @default(0)
+
+  // Location
+  address         String?
+  city            String
+  state           String
+  zipCode         String
+  lat             Float?
+  lng             Float?
+
+  // Specialties (stored as array)
+  specialties     String[]
+
+  // Rating
+  averageRating   Float     @default(0)
+  reviewCount     Int       @default(0)
+
+  // Trust signals — admin-reviewed verification (license, insurance, identity).
+  // Dynamic badge surfaces "Verified · checked {verifiedAt}".
+  verified        Boolean   @default(false)
+  verifiedAt      DateTime?
+
+  // Admin approval. New self-service profiles start PENDING and are hidden
+  // from public search until an admin approves. Existing rows are backfilled
+  // to APPROVED by the accompanying migration so live data stays visible.
+  approvalStatus  ApprovalStatus @default(PENDING)
+  rejectionReason String?
+  reviewedAt      DateTime?
+
+  // Analytics — two distinct, real metrics:
+  //   searchImpressions: times this listing appeared in a search-results page
+  //   profileViews:      times someone opened the full profile (excludes the owner)
+  searchImpressions Int     @default(0)
+  profileViews    Int       @default(0)
+
+  // Stripe Connect — the contractor's connected (Express) account, used to
+  // receive in-app deposit payouts. `chargesEnabled`/`payoutsEnabled` mirror the
+  // Stripe account capabilities (updated via the account.updated webhook); a
+  // business can only receive deposits once payouts are enabled.
+  stripeAccountId  String?
+  chargesEnabled   Boolean   @default(false)
+  payoutsEnabled   Boolean   @default(false)
+
+  // "Pro" subscription ($5/mo, 90-day free trial) — the contractor pays the
+  // PLATFORM (a normal Stripe subscription, distinct from the Connect account
+  // above). While trialing/active they're eligible for the clearly-labeled
+  // "Sponsored" slot in search. Mirrored from Stripe via subscription webhooks.
+  stripeCustomerId    String?
+  proSubscriptionId   String?
+  proStatus           String?   // Stripe sub status: trialing | active | past_due | canceled | …
+  proPlan             String?   // which tier: "sponsored" ($5) | "insights" ($10)
+  proTrialEndsAt      DateTime?
+  proCurrentPeriodEnd DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  conversations   Conversation[]
+  leads           Lead[]
+  reviews         Review[]
+  portfolio       PortfolioProject[]
+  favoritedBy     Favorite[]
+  appointments    Appointment[]
+  hours           BusinessHours[]
+  quoteRequests   QuoteRequest[]
+  payments        Payment[]
+  projects        Project[]
+  verificationDocuments VerificationDocument[]
+}
+
+// One uploaded document a contractor submits to prove their identity, license,
+// or insurance coverage. Stored in S3 (PDF or image). Admin reviews and either
+// APPROVES or REJECTS with a reason. `Business.verified` is recomputed each
+// time we add or change a document — it requires at least one APPROVED +
+// unexpired LICENSE plus at least one APPROVED + unexpired INSURANCE.
+model VerificationDocument {
+  id              String                @id @default(cuid())
+  businessId      String
+  type            VerificationDocType
+  fileUrl         String
+  // Free-form metadata the contractor enters at upload time so admins (and
+  // expired-doc re-uploads) have context: state-issued license number, policy
+  // number, etc., plus the issuing authority (e.g. "California CSLB", "GEICO").
+  documentNumber  String?
+  issuer          String?
+  // For insurance certs (always) and for licenses with an expiration. A doc
+  // past expiresAt is treated as expired even if status = APPROVED, so a
+  // verified business naturally drops the badge when coverage lapses.
+  expiresAt       DateTime?
+  status          VerificationDocStatus @default(PENDING)
+  rejectionReason String?
+  reviewedAt      DateTime?
+  reviewedById    String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([status, createdAt])
+  @@index([expiresAt])
+}
+
+// A homeowner's structured request for a price estimate on a specific project.
+// Richer than a free-form chat message: it carries scope, budget, timeline and
+// photos, and has a lifecycle (PENDING → QUOTED/DECLINED → ACCEPTED/WITHDRAWN)
+// so both sides can track where the deal stands. The contractor fills in the
+// quote fields when they respond.
+model QuoteRequest {
+  id           String      @id @default(cuid())
+  clientId     String
+  businessId   String
+
+  category     String?     // e.g. "Kitchen", "Bathroom"
+  description  String
+  budgetMin    Int?        // homeowner's budget range, in dollars
+  budgetMax    Int?
+  timeline     String?     // e.g. "Within 1 month", "Flexible"
+  imageUrls    String[]
+
+  status       QuoteStatus @default(PENDING)
+
+  // Contractor's response.
+  quoteLow     Int?
+  quoteHigh    Int?
+  responseNote String?
+  respondedAt  DateTime?
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  client       User        @relation("ClientQuoteRequests", fields: [clientId], references: [id], onDelete: Cascade)
+  business     Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  payment      Payment?
+  project      Project?
+
+  @@index([clientId])
+  @@index([businessId])
+}
+
+// One row per weekday describing a contractor's recurring open hours. Times are
+// stored as minutes from midnight (e.g. 540 = 09:00, 1020 = 17:00) and are
+// interpreted in the appointment's wall-clock terms. A `closed` day means the
+// business takes no bookings that weekday regardless of the time fields. A
+// business with no rows at all is treated as "hours not set" — appointment
+// requests are accepted without an availability check (backwards compatible).
+model BusinessHours {
+  id          String   @id @default(cuid())
+  businessId  String
+  dayOfWeek   Int      // 0 = Sunday … 6 = Saturday
+  openMinute  Int      @default(540)
+  closeMinute Int      @default(1020)
+  closed      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, dayOfWeek])
+  @@index([businessId])
+}
+
+// A homeowner saving a contractor to revisit later ("My Projects" hub).
+model Favorite {
+  id         String   @id @default(cuid())
+  userId     String
+  businessId String
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, businessId])
+  @@index([userId])
+}
+
+// A homeowner's stored search criteria. When a new contractor appears that
+// matches the criteria, the owner gets an alert (push + activity feed). Each
+// non-null field narrows the match; an all-null search would match everything,
+// so creation requires at least one criterion.
+model SavedSearch {
+  id             String   @id @default(cuid())
+  userId         String
+  name           String?  // optional user-given label, e.g. "Kitchen remodelers near me"
+  specialty      String?
+  city           String?
+  state          String?
+  q              String?  // free-text company-name match
+  lastNotifiedAt DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Conversation {
+  id          String    @id @default(cuid())
+  clientId    String
+  businessId  String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Read receipts — when each side last opened the conversation.
+  // A message is "unread" for a participant if it was sent by the other
+  // party after this timestamp (null = they've never opened it).
+  clientLastReadAt   DateTime?
+  businessLastReadAt DateTime?
+
+  client      User      @relation("ClientConversations", fields: [clientId], references: [id])
+  business    Business  @relation(fields: [businessId], references: [id])
+  messages    Message[]
+  lead        Lead?
+
+  @@unique([clientId, businessId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  body           String
+  imageUrls      String[]
+  createdAt      DateTime     @default(now())
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
+}
+
+model Lead {
+  id             String       @id @default(cuid())
+  conversationId String       @unique
+  businessId     String
+  status         LeadStatus   @default(NEW)
+  notes          String?
+  estimatedValue Int?         // estimated job value in dollars, set by the business
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  business       Business     @relation(fields: [businessId], references: [id])
+}
+
+// An in-app activity-feed entry for a recipient. Written alongside every push
+// (new lead, message, appointment request/update) so users have a durable
+// "what happened while I was away" inbox, not just ephemeral notifications.
+model Activity {
+  id        String       @id @default(cuid())
+  userId    String
+  type      ActivityType
+  title     String
+  body      String
+  data      Json?        // deep-link payload, e.g. { conversationId } or { appointmentId }
+  readAt    DateTime?
+  createdAt DateTime     @default(now())
+
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// A homeowner requesting a time with a contractor. The business confirms or
+// declines; either party can cancel. Status drives both sides' appointment lists.
+model Appointment {
+  id          String            @id @default(cuid())
+  clientId    String
+  businessId  String
+  scheduledAt DateTime
+  durationMin Int               @default(60)
+  note        String?
+  status      AppointmentStatus @default(REQUESTED)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  client      User              @relation("ClientAppointments", fields: [clientId], references: [id], onDelete: Cascade)
+  business    Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  reviews     Review[]
+
+  @@index([clientId])
+  @@index([businessId])
+}
+
+model PortfolioProject {
+  id          String   @id @default(cuid())
+  businessId  String
+  title       String
+  description String?
+  category    String?  // e.g. "Kitchen", "Bathroom"
+  costMin     Int?     // project cost range, in dollars
+  costMax     Int?
+  durationWeeks Int?
+  imageUrls   String[]
+  // Optional "before" photos, paired by index with imageUrls (the "after"
+  // results) to render Before & After in the portfolio + inspiration feed.
+  beforeImageUrls String[]
+  featured    Boolean  @default(false)
+
+  // Admin approval — same flow as Business. New projects start PENDING and
+  // are hidden from the public portfolio/list until an admin approves.
+  approvalStatus  ApprovalStatus @default(PENDING)
+  rejectionReason String?
+  reviewedAt      DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+// An in-app deposit a homeowner pays when accepting a quote. Created PENDING
+// when the PaymentIntent is generated and flipped to SUCCEEDED by the
+// payment_intent.succeeded webhook. Commission is charged as a fee on top:
+// `amountCents` is the total the homeowner is charged, `commissionCents` is the
+// platform's cut, and the contractor receives the difference (the deposit) in
+// their connected account.
+model Payment {
+  id                    String        @id @default(cuid())
+  quoteRequestId        String?       @unique
+  // When this payment funds a milestone (escrow) rather than a quote deposit.
+  milestoneId           String?       @unique
+  clientId              String
+  businessId            String
+
+  amountCents           Int           // total charged to the homeowner (deposit + commission)
+  commissionCents       Int           // platform fee (application_fee_amount)
+  currency              String        @default("usd")
+  status                PaymentStatus @default(PENDING)
+
+  stripePaymentIntentId String?       @unique
+  description           String?
+  paidAt                DateTime?
+  refundedAt            DateTime?
+
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  quoteRequest QuoteRequest? @relation(fields: [quoteRequestId], references: [id], onDelete: SetNull)
+  milestone    Milestone?    @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  client       User          @relation("ClientPayments", fields: [clientId], references: [id], onDelete: Cascade)
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([clientId])
+}
+
+// One persistent job container per (homeowner, contractor) pair, optionally tied
+// to the accepted quote it came from. Holds the staged milestone payments.
+model Project {
+  id             String        @id @default(cuid())
+  clientId       String
+  businessId     String
+  quoteRequestId String?       @unique
+  title          String
+  status         ProjectStatus @default(ACTIVE)
+  // Homeowner-only scratchpad — measurements, paint colors, contractor notes,
+  // anything they want to remember between sessions. Not visible to the
+  // contractor. Kept inline on the project so the hub view is a single fetch.
+  clientNotes    String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  client       User          @relation("ClientProjects", fields: [clientId], references: [id], onDelete: Cascade)
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  quoteRequest QuoteRequest? @relation(fields: [quoteRequestId], references: [id], onDelete: SetNull)
+  milestones   Milestone[]
+
+  @@unique([clientId, businessId])
+  @@index([clientId])
+  @@index([businessId])
+}
+
+// A staged escrow payment within a project. `amountCents` is the contractor's
+// portion for the stage; the platform commission is charged on top at funding.
+// Funds are held on the platform until release, then transferred to the
+// contractor's connected account (`stripeTransferId`).
+model Milestone {
+  id               String          @id @default(cuid())
+  projectId        String
+  title            String
+  amountCents      Int
+  status           MilestoneStatus @default(PENDING)
+  proofUrls        String[]
+  stripeTransferId String?
+  fundedAt         DateTime?
+  submittedAt      DateTime?
+  approvedAt       DateTime?
+  // The milestone's status right before a dispute was opened, so withdrawing
+  // a dispute can put the row back where it was (FUNDED or SUBMITTED).
+  preDisputeStatus MilestoneStatus?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  payment   Payment?
+  disputes  Dispute[]
+
+  @@index([projectId])
+}
+
+model Dispute {
+  id            String        @id @default(cuid())
+  milestoneId   String
+  raisedById    String        // the homeowner who raised it
+  reason        DisputeReason
+  details       String
+  status        DisputeStatus @default(OPEN)
+  resolvedById  String?       // the admin who resolved it
+  resolvedAt    DateTime?
+  resolutionNote String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  milestone  Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+
+  @@index([milestoneId])
+  @@index([status, createdAt])
+  @@index([raisedById])
+}
+
+model Estimation {
+  id          String   @id @default(cuid())
+  userId      String
+  imageUrls   String[]
+  roomType    String?
+  description String?
+  result      Json
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+// An anonymous estimate "saved" from the web estimator so it can follow the
+// user into the app via a short code / universal link (the saved-estimate
+// handoff). Not attached to a user; read by its unguessable `code`.
+model SharedEstimate {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  roomType  String?
+  result    Json
+  createdAt DateTime @default(now())
+}
+
+model Review {
+  id            String   @id @default(cuid())
+  businessId    String
+  authorId      String?
+  appointmentId String?
+  authorName    String
+  rating        Int
+  body          String?
+  verified      Boolean  @default(false)
+  // Public reply from the reviewed business (one per review).
+  response      String?
+  respondedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt @default(now())
+
+  business      Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  author        User?        @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  @@unique([businessId, authorId])
+  @@index([businessId])
+  @@index([authorId])
+}

@@ -1,0 +1,43 @@
+# Node
+node_modules/
+.env
+.env.local
+dist/
+coverage/
+
+# Locally-stored uploads (S3 fallback in dev)
+api/uploads/
+
+# Prisma
+api/prisma/migrations/*.sql.bak
+
+# iOS / Xcode
+ios/**/.DS_Store
+ios/**/build/
+ios/**/*.xcworkspace/xcuserdata/
+ios/**/*.xcodeproj/xcuserdata/
+ios/**/DerivedData/
+ios/**/*.ipa
+ios/**/*.dSYM.zip
+ios/**/*.dSYM
+ios/Pods/
+ios/**/*.xcarchive
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Editor
+.vscode/
+*.swp
+*.swo
+
+# AI assistant tooling (local-only)
+.claude/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Uploads (local dev)
+api/uploads/
