@@ -46,7 +46,7 @@ export default async function SavedEstimatePage({ params }: Props) {
         <p className="muted" style={{ fontSize: 14, marginTop: 14 }}>
           Then tap “Have an estimate?” and enter this code:
         </p>
-        <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 2, color: 'var(--primary)' }}>
+        <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 2, color: 'var(--rc-primary)' }}>
           {formatCode(est.code)}
         </div>
       </section>

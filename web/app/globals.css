@@ -1,20 +1,71 @@
-:root {
-  --primary: #4f46e5;
-  --primary-light: #eef2ff;
-  --ink: #111827;
-  --muted: #6b7280;
-  --border: #e5e7eb;
-  --bg: #ffffff;
-  --bg-soft: #f9fafb;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── shadcn/ui theme tokens ─────────────────────────────────────── */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 243 75% 59%; /* #4f46e5 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 226 100% 97%; /* #eef2ff */
+    --secondary-foreground: 243 75% 50%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 220 14% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 243 75% 59%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222 47% 6%;
+    --foreground: 0 0% 98%;
+    --card: 222 47% 8%;
+    --card-foreground: 0 0% 98%;
+    --popover: 222 47% 8%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 32% 15%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 222 32% 15%;
+    --muted-foreground: 220 9% 65%;
+    --accent: 222 32% 15%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 222 32% 17%;
+    --input: 222 32% 17%;
+    --ring: 239 84% 67%;
+  }
 }
 
-* { box-sizing: border-box; }
+/* ── Legacy site palette (pre-Tailwind pages) ───────────────────── */
+:root {
+  --rc-primary: #4f46e5;
+  --rc-primary-light: #eef2ff;
+  --rc-ink: #111827;
+  --rc-muted: #6b7280;
+  --rc-border: #e5e7eb;
+  --rc-bg: #ffffff;
+  --rc-bg-soft: #f9fafb;
+}
 
 html, body {
   margin: 0;
   padding: 0;
-  color: var(--ink);
-  background: var(--bg);
+  color: var(--rc-ink);
+  background: var(--rc-bg);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
     Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   -webkit-font-smoothing: antialiased;
@@ -23,6 +74,20 @@ html, body {
 a { color: inherit; text-decoration: none; }
 
 .container { max-width: 760px; margin: 0 auto; padding: 24px 20px 64px; }
+
+/* Tailwind's preflight zeroes heading/paragraph margins and resets
+   heading font styles; the legacy pages were written against browser
+   defaults, so restore them inside the legacy .container layout. */
+.container :is(h1, h2, h3, h4, h5, h6, p) {
+  margin: revert;
+  font-size: revert;
+  font-weight: revert;
+}
+.container :is(ul, ol) {
+  margin: revert;
+  padding: revert;
+  list-style: revert;
+}
 
 .btn {
   display: inline-flex;
@@ -37,30 +102,30 @@ a { color: inherit; text-decoration: none; }
   cursor: pointer;
   border: none;
 }
-.btn-primary { background: var(--primary); color: #fff; }
-.btn-secondary { background: var(--primary-light); color: var(--primary); }
+.btn-primary { background: var(--rc-primary); color: #fff; }
+.btn-secondary { background: var(--rc-primary-light); color: var(--rc-primary); }
 .btn-block { display: flex; width: 100%; }
 
 .card {
-  border: 1px solid var(--border);
+  border: 1px solid var(--rc-border);
   border-radius: 16px;
   padding: 18px;
-  background: var(--bg);
+  background: var(--rc-bg);
 }
 
-.muted { color: var(--muted); }
+.muted { color: var(--rc-muted); }
 .badge {
   display: inline-flex; align-items: center; gap: 6px;
-  font-size: 13px; font-weight: 600; color: var(--primary);
-  background: var(--primary-light); padding: 4px 10px; border-radius: 999px;
+  font-size: 13px; font-weight: 600; color: var(--rc-primary);
+  background: var(--rc-primary-light); padding: 4px 10px; border-radius: 999px;
 }
 .chip {
-  display: inline-block; font-size: 13px; color: var(--ink);
-  background: var(--bg-soft); border: 1px solid var(--border);
+  display: inline-block; font-size: 13px; color: var(--rc-ink);
+  background: var(--rc-bg-soft); border: 1px solid var(--rc-border);
   padding: 4px 10px; border-radius: 999px; margin: 0 6px 6px 0;
 }
 .stars { color: #f59e0b; letter-spacing: 1px; }
 
-.site-header { border-bottom: 1px solid var(--border); }
+.site-header { border-bottom: 1px solid var(--rc-border); }
 .site-header .container { padding-top: 16px; padding-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
-.brand { font-weight: 800; color: var(--primary); font-size: 18px; }
+.brand { font-weight: 800; color: var(--rc-primary); font-size: 18px; }

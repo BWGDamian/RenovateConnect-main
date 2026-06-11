@@ -58,9 +58,9 @@ export default async function BusinessProfilePage({ params }: Props) {
         ) : (
           <div
             style={{
-              width: 72, height: 72, borderRadius: 16, background: 'var(--primary-light)',
+              width: 72, height: 72, borderRadius: 16, background: 'var(--rc-primary-light)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--primary)', fontWeight: 800, fontSize: 28,
+              color: 'var(--rc-primary)', fontWeight: 800, fontSize: 28,
             }}
           >
             {business.companyName.charAt(0)}
@@ -141,7 +141,7 @@ export default async function BusinessProfilePage({ params }: Props) {
               </div>
               {r.body ? <p style={{ margin: '8px 0 0' }}>{r.body}</p> : null}
               {r.response ? (
-                <div style={{ marginTop: 10, paddingLeft: 12, borderLeft: '3px solid var(--border)' }}>
+                <div style={{ marginTop: 10, paddingLeft: 12, borderLeft: '3px solid var(--rc-border)' }}>
                   <div className="muted" style={{ fontSize: 13, fontWeight: 600 }}>Response from {business!.companyName}</div>
                   <p style={{ margin: '4px 0 0' }} className="muted">{r.response}</p>
                 </div>
@@ -152,7 +152,7 @@ export default async function BusinessProfilePage({ params }: Props) {
       ) : null}
 
       {/* Footer CTA */}
-      <section className="card" style={{ marginTop: 32, textAlign: 'center', background: 'var(--bg-soft)' }}>
+      <section className="card" style={{ marginTop: 32, textAlign: 'center', background: 'var(--rc-bg-soft)' }}>
         <strong>Ready to start your project?</strong>
         <p className="muted" style={{ marginTop: 6 }}>
           Get an instant estimate and message {business.companyName} in the app.

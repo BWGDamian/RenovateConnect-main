@@ -5,9 +5,9 @@ export function EstimateBreakdown({ result }: { result: EstimateResult }) {
   const currency = result.currency || 'USD';
   return (
     <>
-      <div className="card" style={{ textAlign: 'center', background: 'var(--primary-light)', border: 'none' }}>
+      <div className="card" style={{ textAlign: 'center', background: 'var(--rc-primary-light)', border: 'none' }}>
         <div className="muted" style={{ fontSize: 14 }}>Estimated cost range</div>
-        <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--primary)', margin: '4px 0' }}>
+        <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--rc-primary)', margin: '4px 0' }}>
           {money(result.totalLow, currency)} – {money(result.totalHigh, currency)}
         </div>
         {result.confidence ? <span className="badge">Confidence: {result.confidence}</span> : null}
@@ -22,7 +22,7 @@ export function EstimateBreakdown({ result }: { result: EstimateResult }) {
             key={i}
             style={{
               display: 'flex', justifyContent: 'space-between', padding: '12px 16px',
-              borderTop: i === 0 ? 'none' : '1px solid var(--border)',
+              borderTop: i === 0 ? 'none' : '1px solid var(--rc-border)',
             }}
           >
             <div>

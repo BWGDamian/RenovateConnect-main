@@ -78,12 +78,12 @@ export default function CostPage({ params }: Props) {
       <h2 style={{ fontSize: 22, marginTop: 30 }}>Typical {category.noun} cost breakdown</h2>
       <div className="card" style={{ padding: 0 }}>
         {items.map((it, i) => (
-          <div key={it.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', borderTop: i === 0 ? 'none' : '1px solid var(--border)' }}>
+          <div key={it.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', borderTop: i === 0 ? 'none' : '1px solid var(--rc-border)' }}>
             <span>{it.label}</span>
             <span style={{ whiteSpace: 'nowrap' }}>{money(it.low)} – {money(it.high)}</span>
           </div>
         ))}
-        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 16px', borderTop: '2px solid var(--border)', fontWeight: 700, background: 'var(--bg-soft)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 16px', borderTop: '2px solid var(--rc-border)', fontWeight: 700, background: 'var(--rc-bg-soft)' }}>
           <span>Total</span>
           <span style={{ whiteSpace: 'nowrap' }}>{money(totalLow)} – {money(totalHigh)}</span>
         </div>
@@ -102,7 +102,7 @@ export default function CostPage({ params }: Props) {
       ))}
 
       {/* Conversion */}
-      <section className="card" style={{ marginTop: 24, textAlign: 'center', background: 'var(--primary-light)', border: 'none' }}>
+      <section className="card" style={{ marginTop: 24, textAlign: 'center', background: 'var(--rc-primary-light)', border: 'none' }}>
         <strong style={{ fontSize: 18 }}>Get a number for your space — free</strong>
         <p className="muted" style={{ marginTop: 6 }}>
           Snap a photo, get an itemized estimate in seconds, then match with vetted {metro.name} contractors. No spam.

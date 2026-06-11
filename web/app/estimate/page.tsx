@@ -96,7 +96,7 @@ export default function EstimatePage() {
           <select
             value={roomType}
             onChange={(e) => setRoomType(e.target.value)}
-            style={{ width: '100%', height: 48, borderRadius: 12, border: '1px solid var(--border)', padding: '0 12px', marginTop: 6, fontSize: 16 }}
+            style={{ width: '100%', height: 48, borderRadius: 12, border: '1px solid var(--rc-border)', padding: '0 12px', marginTop: 6, fontSize: 16 }}
           >
             {ROOM_TYPES.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
@@ -109,7 +109,7 @@ export default function EstimatePage() {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="e.g. replace cabinets and countertops, keep the layout"
             rows={3}
-            style={{ width: '100%', borderRadius: 12, border: '1px solid var(--border)', padding: 12, marginTop: 6, fontSize: 16, fontFamily: 'inherit', resize: 'vertical' }}
+            style={{ width: '100%', borderRadius: 12, border: '1px solid var(--rc-border)', padding: 12, marginTop: 6, fontSize: 16, fontFamily: 'inherit', resize: 'vertical' }}
           />
         </div>
 
@@ -155,7 +155,7 @@ function ResultView({ result, roomType, onReset }: { result: EstimateResult; roo
       <EstimateBreakdown result={result} />
 
       {/* Conversion gate — the whole point of the front door. */}
-      <section className="card" style={{ marginTop: 26, textAlign: 'center', background: 'var(--bg-soft)' }}>
+      <section className="card" style={{ marginTop: 26, textAlign: 'center', background: 'var(--rc-bg-soft)' }}>
         <strong style={{ fontSize: 18 }}>Make it real</strong>
         <p className="muted" style={{ marginTop: 6 }}>
           Save this estimate and get matched with vetted local contractors — with payment protection and no spam.
