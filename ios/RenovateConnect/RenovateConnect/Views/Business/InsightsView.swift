@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Pro Insights ($10 tier): aggregated, de-identified market demand + the
+/// Pro Insights ($20 tier): aggregated, de-identified market demand + the
 /// contractor's own performance. Every figure is a group of at least
 /// `minBucket`; nothing here identifies an individual homeowner.
 struct InsightsView: View {

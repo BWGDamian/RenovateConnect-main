@@ -116,12 +116,12 @@ Introduce in-app booking + escrow payments and take a cut, à la TaskRabbit.
 ### Recommended path: **B now → A in parallel → C later**
 
 > **Status (shipped):** Playbook **B** is live as the **Pro subscription**
-> ($5/mo, 90-day free trial) whose perk is a clearly-labeled, capped
+> ($10/mo, 90-day free trial) whose perk is a clearly-labeled, capped
 > **"Sponsored"** slot above organic results — paid *visibility* without paid
 > *ranking* (organic stays sorted by verification + rating). Playbook **C**
 > (transaction commission on deposits + milestone escrow) is also live. Playbook
 > **A** (per-lead fees) remains intentionally **not** implemented. A planned
-> **$10/mo "Insights" upsell** (aggregated market/demand data, not raw PII) is
+> **$20/mo "Insights" upsell** (aggregated market/demand data, not raw PII) is
 > noted in `RETENTION_AND_FEATURE_ROADMAP.md`.
 
 1. **Launch:** Freemium SaaS (B). Turns our built tools into revenue + supply magnet.

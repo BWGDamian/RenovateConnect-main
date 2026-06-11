@@ -69,10 +69,10 @@ TestFlight or expose us to legal/PR/regulatory risk.)
    *"3 verified contractors near you can do this for ~$X — want a one-tap
    intro?"* Converts the top-of-funnel estimator into bookings.
 9. **Sponsored slot performance reporting for Pro contractors.** A contractor
-   paying $5/mo can't see impressions/clicks/leads from the Sponsored slot.
+   paying $10/mo can't see impressions/clicks/leads from the Sponsored slot.
    Churn at month 4 (end of 90-day trial + 1 paid month) will be brutal
-   without it. A simple impressions/CTR card makes the $5 self-justify and is
-   the natural Insights ($10) upsell ("see who's searching for what near you").
+   without it. A simple impressions/CTR card makes the $10 self-justify and is
+   the natural Insights ($20) upsell ("see who's searching for what near you").
 10. **Saved searches → push alerts.** `savedSearches.js` ships rows but I don't
     believe anything triggers from them. *"3 new contractors match your saved
     search 'kitchen, 94610'"* is one of the highest-CTR re-engagement pushes

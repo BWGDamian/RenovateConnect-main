@@ -105,7 +105,7 @@ Our differentiator (AI estimation) wins **Day 1**. But we have **nothing that wi
 3. **In-app payments / escrow** (Stripe Connect) — unlocks transaction take-rate + verified reviews. ✅ *Shipped.*
 4. **Photo reviews + automated post-job review prompts.**
 5. **Referral loops** (two-sided) with deep links.
-6. **Pro "Insights" tier — $10/mo (upsell from the $5 Sponsored tier).** A higher
+6. **Pro "Insights" tier — $20/mo (upsell from the $10 Sponsored tier).** A higher
    plan giving contractors more market intelligence: demand by area (where
    homeowners are searching/estimating near them), trending project categories,
    their profile-view/impression trends, and lead-source analytics.
@@ -116,7 +116,7 @@ Our differentiator (AI estimation) wins **Day 1**. But we have **nothing that wi
      trends ("12 kitchen estimates in 94610 this month"), not named individuals.
    - Builds naturally on existing data: `searchImpressions`, `profileViews`,
      estimations, saved-search demand, and the new geocoded business/search
-     coordinates. Tier it above the $5 Sponsored plan (`proStatus` →
+     coordinates. Tier it above the $10 Sponsored plan (`proStatus` →
      plan/price-id), reusing the subscription plumbing already in place.
 
 ---

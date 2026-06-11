@@ -101,8 +101,8 @@ struct DashboardView: View {
                 Text("You'll keep Pro until the end of your current period, then stop being featured.")
             }
             .confirmationDialog("Choose your plan", isPresented: $showPlanDialog, titleVisibility: .visible) {
-                Button("Sponsored — $5/mo") { Task { await startPro(plan: "sponsored") } }
-                Button("Insights — $10/mo") { Task { await startPro(plan: "insights") } }
+                Button("Sponsored — $10/mo") { Task { await startPro(plan: "sponsored") } }
+                Button("Insights — $20/mo") { Task { await startPro(plan: "insights") } }
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("Both include the Sponsored search slot and a 3-month free trial. Insights adds aggregated market demand data.")
@@ -215,7 +215,7 @@ struct DashboardView: View {
     }
 
     // Pro upsell / status. Subscribers appear in the clearly-labeled "Sponsored"
-    // slot in search. $5/mo with a 90-day free trial.
+    // slot in search. $10/mo with a 90-day free trial.
     @ViewBuilder
     private var proCard: some View {
         if auth.currentUser?.business != nil {
@@ -251,7 +251,7 @@ struct DashboardView: View {
     }
 
     private func proSubtitle(_ isPro: Bool) -> String {
-        guard isPro else { return "Get featured + market insights. From $5/mo · 3 months free." }
+        guard isPro else { return "Get featured + market insights. From $10/mo · 3 months free." }
         let tier = pro?.insights == true ? "Insights" : "Sponsored"
         if pro?.isTrialing == true, let ends = pro?.trialEndsAt?.shortDate {
             return "\(tier) · free trial, renews \(ends). Tap to manage."
@@ -259,7 +259,7 @@ struct DashboardView: View {
         return "\(tier) · active. Tap to manage."
     }
 
-    // Insights tier ($10) gets a dedicated market-data screen.
+    // Insights tier ($20) gets a dedicated market-data screen.
     @ViewBuilder
     private var insightsLink: some View {
         if pro?.insights == true {

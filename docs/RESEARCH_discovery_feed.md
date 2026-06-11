@@ -229,7 +229,7 @@ projects is trivial.
   into the existing activity/push system and the favorites digest.
 - **Inspiration → estimate → lead:** the "price this look" CTA routes into the
   estimator and contractor match — directly grows the funnel we monetize.
-- **Sponsored pins (Pro):** new inventory for the $5 tier; **Insights ($10)** can
+- **Sponsored pins (Pro):** new inventory for the $10 tier; **Insights ($20)** can
   report pin impressions/saves (aggregated) — extends what we just shipped.
 - **Contractor incentive:** "your work was saved 42 times this month" is a
   powerful reason to upload more portfolio → richer feed → flywheel.

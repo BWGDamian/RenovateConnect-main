@@ -171,16 +171,16 @@ async function createRefund(paymentIntentId) {
 // --- "Pro" subscription (contractor pays the platform) ------------------------
 //
 // A normal recurring subscription billed TO the contractor BY the platform —
-// NOT a Connect charge. $5/mo with a 90-day free trial. `payment_method_collection:
+// NOT a Connect charge. $10/mo with a 90-day free trial. `payment_method_collection:
 // 'if_required'` lets the trial start with no card, so signup is frictionless;
 // Stripe collects a card before the trial ends. The subscription's businessId
 // metadata lets the webhook map status changes back to the right business.
 
-const PRO_PRICE_CENTS = () => parseInt(process.env.PRO_PRICE_CENTS || '500', 10);
-const INSIGHTS_PRICE_CENTS = () => parseInt(process.env.INSIGHTS_PRICE_CENTS || '1000', 10);
+const PRO_PRICE_CENTS = () => parseInt(process.env.PRO_PRICE_CENTS || '1000', 10);
+const INSIGHTS_PRICE_CENTS = () => parseInt(process.env.INSIGHTS_PRICE_CENTS || '2000', 10);
 const PRO_TRIAL_DAYS = () => parseInt(process.env.PRO_TRIAL_DAYS || '90', 10);
 
-// Two tiers: "sponsored" ($5 — the labeled Sponsored slot) and "insights" ($10 —
+// Two tiers: "sponsored" ($10 — the labeled Sponsored slot) and "insights" ($20 —
 // Sponsored slot + aggregated market insights). Insights is a strict superset.
 function proPlanConfig(plan) {
   if (plan === 'insights') {

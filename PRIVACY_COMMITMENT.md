@@ -21,7 +21,7 @@
 
 ## 2. What the contractor "Insights" tier actually shows
 
-The $10/mo **Pro Insights** plan gives contractors **aggregated, de-identified
+The $20/mo **Pro Insights** plan gives contractors **aggregated, de-identified
 market trends only** — never data about a specific person:
 
 - **Demand by category** — e.g. "Kitchen: 23 saved searches this period."
