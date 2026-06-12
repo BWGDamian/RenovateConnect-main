@@ -189,8 +189,26 @@
       cursor: pointer;
       transition: background .18s ease, border-color .18s ease, transform .12s ease, box-shadow .18s ease;
       min-height: 48px;
+      position: relative;
     }
     .btn:active { transform: scale(.98); }
+    /* Neon treatment — ported from web/components/ui/neon-button.tsx.
+       To undo: remove this block and restore the previous .btn-glass styles. */
+    .btn::before, .btn::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 75%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #3B82F6, transparent);
+      transition: opacity .5s ease-in-out;
+      pointer-events: none;
+    }
+    .btn::before { top: 0; opacity: 0; }
+    .btn:hover::before { opacity: 1; }
+    .btn::after { bottom: -1px; opacity: 1; }
+    .btn:hover::after { opacity: .3; }
     .btn-primary {
       background: var(--blue);
       color: #fff;
@@ -215,27 +233,18 @@
       border: 1.5px solid rgba(255,255,255,.3);
     }
     .btn-ghost-light:hover { background: rgba(255,255,255,.16); }
-    /* liquid-glass CTA (used over the WebGL hero) */
+    /* neon CTA over the WebGL hero — the neon-button "default" variant */
     .btn-glass {
-      position: relative;
-      background: rgba(255,255,255,.07);
+      background: rgba(59,130,246,.05);
       color: #fff;
-      border: 1px solid rgba(255,255,255,.38);
+      border: 1px solid rgba(59,130,246,.25);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      box-shadow:
-        inset 1px 1px 1px rgba(255,255,255,.45),
-        inset -1px -1px 1px rgba(255,255,255,.18),
-        inset 0 0 10px rgba(255,255,255,.06),
-        0 10px 34px rgba(37,99,235,.4);
     }
     .btn-glass:hover {
-      background: rgba(255,255,255,.15);
+      background: rgba(59,130,246,0);
+      border-color: rgba(96,165,250,.45);
       transform: translateY(-1px) scale(1.02);
-      box-shadow:
-        inset 1px 1px 1px rgba(255,255,255,.5),
-        inset -1px -1px 1px rgba(255,255,255,.2),
-        0 14px 40px rgba(59,130,246,.5);
     }
 
     /* ── HERO (dark + WebGL shader) ────────────────── */
