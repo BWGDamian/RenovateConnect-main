@@ -588,8 +588,22 @@
 
     /* ── HOW IT WORKS ──────────────────────────────── */
     .how { background: var(--surface); border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); }
-    .tabs { display: inline-flex; gap: 6px; background: var(--paper); border: 1px solid var(--line); padding: 6px; border-radius: 99px; margin-bottom: 52px; }
+    .tabs { position: relative; display: inline-flex; gap: 6px; background: var(--paper); border: 1px solid var(--line); padding: 6px; border-radius: 99px; margin-bottom: 52px; }
+    .tab-indicator {
+      position: absolute;
+      top: 6px;
+      bottom: 6px;
+      left: 0;
+      width: 0;
+      border-radius: 99px;
+      background: var(--blue);
+      box-shadow: 0 3px 12px rgba(29,78,216,.3);
+      transition: transform .38s cubic-bezier(.65,0,.35,1), width .38s cubic-bezier(.65,0,.35,1);
+      z-index: 0;
+    }
     .tab-btn {
+      position: relative;
+      z-index: 1;
       padding: 11px 24px;
       border-radius: 99px;
       font-family: var(--font-body);
@@ -599,12 +613,22 @@
       border: none;
       background: transparent;
       color: var(--muted);
-      transition: background .18s ease, color .18s ease;
+      transition: color .25s ease;
       min-height: 44px;
     }
-    .tab-btn[aria-selected="true"] { background: var(--blue); color: #fff; box-shadow: 0 3px 12px rgba(29,78,216,.3); }
+    .tab-btn[aria-selected="true"] { color: #fff; }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
+    .tab-panel.slide-in-right { animation: tabSlideFromRight .45s cubic-bezier(.16,1,.3,1); }
+    .tab-panel.slide-in-left { animation: tabSlideFromLeft .45s cubic-bezier(.16,1,.3,1); }
+    @keyframes tabSlideFromRight {
+      from { opacity: 0; transform: translateX(28px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes tabSlideFromLeft {
+      from { opacity: 0; transform: translateX(-28px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
     .steps {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -1246,6 +1270,7 @@
     <p class="kicker">How It Works</p>
     <h2 class="title">Simple from start to finish.</h2>
     <div class="tabs" role="tablist" aria-label="How it works for each audience">
+      <div class="tab-indicator" aria-hidden="true"></div>
       <button class="tab-btn" role="tab" id="tab-btn-homeowner" aria-selected="true" aria-controls="tab-homeowner" onclick="switchTab('homeowner')">For Homeowners</button>
       <button class="tab-btn" role="tab" id="tab-btn-contractor" aria-selected="false" aria-controls="tab-contractor" onclick="switchTab('contractor')">For Contractors</button>
     </div>
@@ -1648,14 +1673,40 @@
 </footer>
 
 <script>
+  function moveTabIndicator(btn) {
+    var indicator = document.querySelector('.tab-indicator');
+    var tabs = document.querySelector('.tabs');
+    if (!indicator || !tabs || !btn) return;
+    var tabsRect = tabs.getBoundingClientRect();
+    var btnRect = btn.getBoundingClientRect();
+    indicator.style.width = btnRect.width + 'px';
+    indicator.style.transform = 'translateX(' + (btnRect.left - tabsRect.left) + 'px)';
+  }
+
   function switchTab(tab) {
+    var fromRight = tab === 'contractor';
     document.querySelectorAll('.tab-btn').forEach(function (b) {
-      b.setAttribute('aria-selected', String(b.id === 'tab-btn-' + tab));
+      var selected = b.id === 'tab-btn-' + tab;
+      b.setAttribute('aria-selected', String(selected));
+      if (selected) moveTabIndicator(b);
     });
     document.querySelectorAll('.tab-panel').forEach(function (p) {
-      p.classList.toggle('active', p.id === 'tab-' + tab);
+      var isActive = p.id === 'tab-' + tab;
+      p.classList.remove('slide-in-left', 'slide-in-right', 'active');
+      if (isActive) {
+        p.classList.add('active', fromRight ? 'slide-in-right' : 'slide-in-left');
+      }
     });
   }
+
+  window.addEventListener('load', function () {
+    var activeBtn = document.querySelector('.tab-btn[aria-selected="true"]');
+    if (activeBtn) moveTabIndicator(activeBtn);
+  });
+  window.addEventListener('resize', function () {
+    var activeBtn = document.querySelector('.tab-btn[aria-selected="true"]');
+    if (activeBtn) moveTabIndicator(activeBtn);
+  });
 
   function toggleMenu(btn) {
     var menu = document.getElementById('nav-menu');
