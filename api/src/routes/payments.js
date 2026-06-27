@@ -97,7 +97,7 @@ router.get('/connect/status', authMiddleware, requireRole('BUSINESS'), async (re
 // --- Pro subscription (contractor pays the platform) -------------------------
 
 // POST /payments/pro/subscribe — start a hosted Checkout for the $10/mo Pro plan
-// (90-day free trial). Returns a URL the app opens in a web auth session.
+// (30-day free trial). Returns a URL the app opens in a web auth session.
 router.post('/pro/subscribe', authMiddleware, requireRole('BUSINESS'), async (req, res, next) => {
   try {
     const { plan } = z.object({

@@ -7,7 +7,7 @@ iOS marketplace for homeowners to find renovation contractors. Revenue model:
   deposit, the platform takes a commission (fee-on-top) via Stripe Connect.
   This is the live revenue stream.
 - **Pro subscription** — contractors can pay the platform **$10/mo base
-  ("sponsored") or $20/mo "insights" tier, both with a 90-day free trial**, via
+  ("sponsored") or $20/mo "insights" tier, both with a 30-day free trial**, via
   a Stripe **subscription** (distinct from their Connect payout account). While
   trialing/active they appear in a clearly-labeled, capped
   **"Sponsored"** slot shown ABOVE organic search results. Routes:

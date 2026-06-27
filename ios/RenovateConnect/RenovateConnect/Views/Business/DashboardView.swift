@@ -215,7 +215,7 @@ struct DashboardView: View {
     }
 
     // Pro upsell / status. Subscribers appear in the clearly-labeled "Sponsored"
-    // slot in search. $10/mo with a 90-day free trial.
+    // slot in search. $10/mo with a 30-day free trial.
     @ViewBuilder
     private var proCard: some View {
         if auth.currentUser?.business != nil {
